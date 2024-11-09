@@ -1,1 +1,1 @@
-docker run --rm nicolaka/netshoot
+FROM nicolaka/netshoot

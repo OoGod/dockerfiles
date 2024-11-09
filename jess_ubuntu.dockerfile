@@ -1,1 +1,1 @@
-docker run -it jess/ubuntu
+FROM jess/ubuntu
