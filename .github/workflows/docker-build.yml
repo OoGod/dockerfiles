@@ -15,6 +15,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
       DOCKER_IMAGE_NAME: "code-server-python"  # 镜像名称
       DOCKER_TAG: "latest"  # 镜像标签
+      DOCKERFILE_NAME: "code-server-python.dockerfile"  # 自定义 Dockerfile 名称
 
     steps:
       - name: Checkout repository
@@ -34,17 +35,25 @@ jobs:
           COMMIT_HASH=$(git rev-parse HEAD)
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-      # 创建 digests 文件夹并下载之前构建时的 digest 和 commit hash
+      # 创建 digests 文件夹并下载最新构建的 digest 和 commit hash
       - name: Download last build digest and commit hash
         id: download_info
         run: |
           mkdir -p digests
-          # 使用 actions/download-artifact 下载 artifact
-          echo "Downloading last digest and commit hash..."
-          curl -sL "$GITHUB_API_URL/repos/${GITHUB_REPOSITORY}/actions/artifacts" | jq -r '.artifacts[] | select(.name=="code-server-digest-and-commit") | .archive_download_url' | xargs -I {} curl -L -o digests/code-server-digest-and-commit.zip {}
-          
-          # 解压 artifact 中的文件
-          unzip digests/code-server-digest-and-commit.zip -d digests || echo "No previous digest found or commit hash."
+          echo "Downloading the latest digest and commit hash..."
+
+          # 获取所有 artifacts 并选择最新的一个
+          ARTIFACT_URL=$(curl -sL "$GITHUB_API_URL/repos/${GITHUB_REPOSITORY}/actions/artifacts" | \
+            jq -r '.artifacts[] | select(.name=="code-server-digest-and-commit") | .archive_download_url' | \
+            sort | tail -n 1)  # 根据创建时间排序并获取最新的一个
+
+          # 如果有可用的 artifact，下载并解压
+          if [ -n "$ARTIFACT_URL" ]; then
+            curl -L -o digests/code-server-digest-and-commit.zip "$ARTIFACT_URL"
+            unzip -q digests/code-server-digest-and-commit.zip -d digests
+          else
+            echo "No previous digest found or commit hash."
+          fi
 
       # 检查 digest 和 commit hash 是否发生变化
       - name: Check if image or code has been updated
@@ -78,10 +87,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 构建并推送 Docker 镜像
+      # 使用自定义 Dockerfile 构建并推送 Docker 镜像
       - name: Build and Push Docker image
         run: |
-          docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG .
+          docker build -f $DOCKERFILE_NAME -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG .
           docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG
 
       # 保存新生成的 digest 和 commit hash 到文件，并上传作为 artifact
