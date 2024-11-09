@@ -11,6 +11,10 @@ on:
 jobs:
   check-and-build:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_IMAGE_NAME: "code-server-python"
+      DOCKER_TAG: "latest"
 
     steps:
       # 检出代码仓库，以便使用 Git 命令
@@ -76,8 +80,8 @@ jobs:
       - name: Build and Push Docker image
         if: steps.check_update.outcome == 'success'
         run: |
-          docker build -t aliceboy111/code-server-python:latest .
-          docker push aliceboy111/code-server-python:latest
+          docker build --build-arg USERNAME=$DOCKER_USERNAME --build-arg IMAGE_NAME=$DOCKER_IMAGE_NAME --build-arg TAG=$DOCKER_TAG -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG .
+          docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG
 
       # 保存新的 digest 和 commit hash 为 Artifact
       - name: Save new digest and commit hash as artifact
