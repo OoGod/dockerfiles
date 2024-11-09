@@ -1,0 +1,81 @@
+name: Check and Build Code-Server Image
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天 UTC 时间凌晨 12 点检查更新
+  workflow_dispatch:  # 手动触发
+  push:
+    branches:
+      - main  # 如果仓库代码有更新，将自动触发
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 获取最新的 code-server 镜像 digest
+      - name: Get latest code-server image digest from Docker Hub
+        id: get_digest
+        run: |
+          LATEST_DIGEST=$(curl -s https://registry.hub.docker.com/v2/repositories/codercom/code-server/tags/latest | jq -r '.images[0].digest')
+          echo "::set-output name=LATEST_DIGEST::$LATEST_DIGEST"
+
+      # 获取当前 Git 提交号
+      - name: Get current Git commit hash
+        id: get_commit
+        run: |
+          COMMIT_HASH=$(git rev-parse HEAD)
+          echo "::set-output name=COMMIT_HASH::$COMMIT_HASH"
+
+      # 下载上次构建时的 digest 和 commit hash
+      - name: Download last build digest and commit hash
+        id: download_info
+        run: |
+          mkdir -p digests
+          curl -fL -o digests/last_digest.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_digest.txt" || echo ""
+          curl -fL -o digests/last_commit.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_commit.txt" || echo ""
+
+      # 检查镜像的 digest 和提交号是否有变化
+      - name: Check if image or code has been updated
+        id: check_update
+        run: |
+          LAST_DIGEST=$(cat digests/last_digest.txt || echo "")
+          LAST_COMMIT=$(cat digests/last_commit.txt || echo "")
+
+          if [ "$LAST_DIGEST" != "${{ steps.get_digest.outputs.LATEST_DIGEST }}" ] || [ "$LAST_COMMIT" != "${{ steps.get_commit.outputs.COMMIT_HASH }}" ]; then
+            echo "New image or code detected."
+          else
+            echo "No updates."
+            exit 0
+
+      # 登录 Docker Hub
+      - name: Log in to Docker Hub
+        if: steps.check_update.outcome == 'success'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 构建并推送 Docker 镜像
+      - name: Build and Push Docker image
+        if: steps.check_update.outcome == 'success'
+        run: |
+          docker build -t aliceboy111/code-server-python:latest .
+          docker push aliceboy111/code-server-python:latest
+
+      # 保存新的 digest 和 commit hash 为 Artifact
+      - name: Save new digest and commit hash as artifact
+        if: steps.check_update.outcome == 'success'
+        run: |
+          echo "${{ steps.get_digest.outputs.LATEST_DIGEST }}" > digests/last_digest.txt
+          echo "${{ steps.get_commit.outputs.COMMIT_HASH }}" > digests/last_commit.txt
+        - name: Upload digest and commit hash as artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: last_digest
+            path: digests/last_digest.txt
+        - name: Upload commit hash as artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: last_commit
+            path: digests/last_commit.txt
