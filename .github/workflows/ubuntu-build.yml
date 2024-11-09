@@ -12,7 +12,7 @@ jobs:
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
       DOCKER_IMAGE_NAME: "ubuntu"  # 镜像名称
-      DOCKER_TAG: ${{ github.ref }}  # 镜像标签
+      DOCKER_TAG: ${{ github.ref_name}}  # 镜像标签
       DOCKERFILE_PATH: "./ubuntu.dockerfile"  # 自定义 Dockerfile 路径
 
 

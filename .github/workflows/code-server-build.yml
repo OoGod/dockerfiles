@@ -14,7 +14,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       DOCKER_IMAGE_NAME: "code-server"  # 镜像名称
-      DOCKER_TAG: ${{ github.ref }}  # 镜像标签
+      DOCKER_TAG: ${{ github.ref_name }}  # 镜像标签
       DOCKERFILE_PATH: "./code-server.dockerfile"  # 自定义 Dockerfile 路径
       
     steps:
