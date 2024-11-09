@@ -15,7 +15,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
       DOCKER_IMAGE_NAME: "code-server-python"  # 镜像名称
       DOCKER_TAG: "latest"  # 镜像标签
-      DOCKERFILE_NAME: "code-server-python.dockerfile"  # 自定义 Dockerfile 名称
+      DOCKERFILE_NAME: "Dockerfile.custom"  # 自定义 Dockerfile 名称
 
     steps:
       - name: Checkout repository
@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir -p digests
           echo "Downloading the latest digest and commit hash..."
-
+          
           # 获取所有 artifacts 并选择最新的一个
           ARTIFACT_URL=$(curl -sL "$GITHUB_API_URL/repos/${GITHUB_REPOSITORY}/actions/artifacts" | \
             jq -r '.artifacts[] | select(.name=="code-server-digest-and-commit") | .archive_download_url' | \
@@ -49,7 +49,17 @@ jobs:
 
           # 如果有可用的 artifact，下载并解压
           if [ -n "$ARTIFACT_URL" ]; then
+            echo "Downloading artifact from $ARTIFACT_URL"
             curl -L -o digests/code-server-digest-and-commit.zip "$ARTIFACT_URL"
+            
+            # 检查文件类型是否为 zip
+            FILE_TYPE=$(file --mime-type -b digests/code-server-digest-and-commit.zip)
+            if [ "$FILE_TYPE" != "application/zip" ]; then
+              echo "Error: Downloaded file is not a valid ZIP file. File type is $FILE_TYPE"
+              exit 1
+            fi
+
+            # 解压下载的 ZIP 文件
             unzip -q digests/code-server-digest-and-commit.zip -d digests
           else
             echo "No previous digest found or commit hash."
