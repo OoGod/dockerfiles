@@ -16,20 +16,20 @@ jobs:
       # 检出代码仓库，以便使用 Git 命令
       - name: Check out the repository
         uses: actions/checkout@v3
-      
+
       # 获取最新的 code-server 镜像 digest
       - name: Get latest code-server image digest from Docker Hub
         id: get_digest
         run: |
           LATEST_DIGEST=$(curl -s https://registry.hub.docker.com/v2/repositories/codercom/code-server/tags/latest | jq -r '.images[0].digest')
-          echo "::set-output name=LATEST_DIGEST::$LATEST_DIGEST"
+          echo "LATEST_DIGEST=$LATEST_DIGEST" >> $GITHUB_ENV
 
       # 获取当前 Git 提交号
       - name: Get current Git commit hash
         id: get_commit
         run: |
           COMMIT_HASH=$(git rev-parse HEAD)
-          echo "::set-output name=COMMIT_HASH::$COMMIT_HASH"
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
       # 下载上次构建时的 digest 和 commit hash
       - name: Download last build digest and commit hash
@@ -46,7 +46,7 @@ jobs:
           LAST_DIGEST=$(cat digests/last_digest.txt || echo "")
           LAST_COMMIT=$(cat digests/last_commit.txt || echo "")
 
-          if [ "$LAST_DIGEST" != "${{ steps.get_digest.outputs.LATEST_DIGEST }}" ] || [ "$LAST_COMMIT" != "${{ steps.get_commit.outputs.COMMIT_HASH }}" ]; then
+          if [ "$LAST_DIGEST" != "$LATEST_DIGEST" ] || [ "$LAST_COMMIT" != "$COMMIT_HASH" ]; then
             echo "New image or code detected."
           else
             echo "No updates."
@@ -64,15 +64,15 @@ jobs:
       - name: Build and Push Docker image
         if: steps.check_update.outcome == 'success'
         run: |
-          docker build -t aliceboy111/code-server-python:latest .
-          docker push aliceboy111/code-server-python:latest
-      
+          docker build -t yourusername/code-server-python:latest .
+          docker push yourusername/code-server-python:latest
+
       # 保存新的 digest 和 commit hash 为 Artifact
       - name: Save new digest and commit hash as artifact
         if: steps.check_update.outcome == 'success'
         run: |
-          echo "${{ steps.get_digest.outputs.LATEST_DIGEST }}" > digests/last_digest.txt
-          echo "${{ steps.get_commit.outputs.COMMIT_HASH }}" > digests/last_commit.txt
+          echo "$LATEST_DIGEST" > digests/last_digest.txt
+          echo "$COMMIT_HASH" > digests/last_commit.txt
 
       - name: Upload digest as artifact
         if: steps.check_update.outcome == 'success'
