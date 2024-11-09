@@ -50,7 +50,7 @@ jobs:
           # 如果有可用的 artifact，下载并解压
           if [ -n "$ARTIFACT_URL" ]; then
             echo "Downloading artifact from $ARTIFACT_URL"
-            curl -L -o digests/code-server-digest-and-commit.zip "$ARTIFACT_URL"
+            curl -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" -L -o digests/code-server-digest-and-commit.zip "$ARTIFACT_URL"
             
             # 检查文件类型是否为 zip
             FILE_TYPE=$(file --mime-type -b digests/code-server-digest-and-commit.zip)
