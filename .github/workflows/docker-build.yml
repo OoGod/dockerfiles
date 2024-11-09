@@ -12,13 +12,12 @@ jobs:
   check-and-build:
     runs-on: ubuntu-latest
     env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_IMAGE_NAME: "code-server-python"
-      DOCKER_TAG: "latest"
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
+      DOCKER_IMAGE_NAME: "code-server-python"  # 镜像名称
+      DOCKER_TAG: "latest"  # 镜像标签
 
     steps:
-      # 检出代码仓库，以便使用 Git 命令
-      - name: Check out the repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       # 获取最新的 code-server 镜像 digest
@@ -35,15 +34,19 @@ jobs:
           COMMIT_HASH=$(git rev-parse HEAD)
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-      # 创建 digests 文件夹，下载上次构建时的 digest 和 commit hash
+      # 创建 digests 文件夹并下载之前构建时的 digest 和 commit hash
       - name: Download last build digest and commit hash
         id: download_info
         run: |
           mkdir -p digests
-          curl -fL -o digests/last_digest.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_digest.txt" || echo "No previous digest found."
-          curl -fL -o digests/last_commit.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_commit.txt" || echo "No previous commit found."
+          # 使用 actions/download-artifact 下载 artifact
+          echo "Downloading last digest and commit hash..."
+          curl -sL "$GITHUB_API_URL/repos/${GITHUB_REPOSITORY}/actions/artifacts" | jq -r '.artifacts[] | select(.name=="code-server-digest-and-commit") | .archive_download_url' | xargs -I {} curl -L -o digests/code-server-digest-and-commit.zip {}
+          
+          # 解压 artifact 中的文件
+          unzip digests/code-server-digest-and-commit.zip -d digests || echo "No previous digest found or commit hash."
 
-      # 检查镜像的 digest 和提交号是否有变化
+      # 检查 digest 和 commit hash 是否发生变化
       - name: Check if image or code has been updated
         id: check_update
         run: |
@@ -53,24 +56,23 @@ jobs:
           else
             LAST_DIGEST=""
           fi
-
+          
           if [ -f digests/last_commit.txt ]; then
             LAST_COMMIT=$(cat digests/last_commit.txt)
           else
             LAST_COMMIT=""
           fi
-
+          
           # 判断是否有更新
           if [ "$LAST_DIGEST" != "$LATEST_DIGEST" ] || [ "$LAST_COMMIT" != "$COMMIT_HASH" ]; then
             echo "New image or code detected."
           else
             echo "No updates."
             exit 0
-          fi  # 结束 if 语句
+          fi
 
-      # 登录 Docker Hub
+      # 登录到 Docker Hub
       - name: Log in to Docker Hub
-        if: steps.check_update.outcome == 'success'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -78,28 +80,22 @@ jobs:
 
       # 构建并推送 Docker 镜像
       - name: Build and Push Docker image
-        if: steps.check_update.outcome == 'success'
         run: |
-          docker build --build-arg USERNAME=$DOCKER_USERNAME --build-arg IMAGE_NAME=$DOCKER_IMAGE_NAME --build-arg TAG=$DOCKER_TAG -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG .
+          docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG .
           docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:$DOCKER_TAG
 
-      # 保存新的 digest 和 commit hash 为 Artifact
+      # 保存新生成的 digest 和 commit hash 到文件，并上传作为 artifact
       - name: Save new digest and commit hash as artifact
-        if: steps.check_update.outcome == 'success'
         run: |
+          # 保存当前的 digest 和 commit hash
           echo "$LATEST_DIGEST" > digests/last_digest.txt
           echo "$COMMIT_HASH" > digests/last_commit.txt
 
-      - name: Upload digest as artifact
-        if: steps.check_update.outcome == 'success'
+      # 上传生成的文件作为 artifact，确保数据可以在工作流结束后下载
+      - name: Upload digest and commit hash as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: last_digest
-          path: digests/last_digest.txt
-
-      - name: Upload commit hash as artifact
-        if: steps.check_update.outcome == 'success'
-        uses: actions/upload-artifact@v3
-        with:
-          name: last_commit
-          path: digests/last_commit.txt
+          name: code-server-digest-and-commit
+          path: |
+            digests/last_digest.txt
+            digests/last_commit.txt
