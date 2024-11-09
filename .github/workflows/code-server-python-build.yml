@@ -15,7 +15,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
       DOCKER_IMAGE_NAME: "code-server-python"  # 镜像名称
       DOCKER_TAG: "latest"  # 镜像标签
-      DOCKERFILE_NAME: "Dockerfile.custom"  # 自定义 Dockerfile 名称
+      DOCKERFILE_NAME: "code-server-python.dockerfile"  # 自定义 Dockerfile 名称
 
     steps:
       - name: Checkout repository
