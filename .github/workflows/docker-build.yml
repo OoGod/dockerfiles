@@ -31,21 +31,32 @@ jobs:
           COMMIT_HASH=$(git rev-parse HEAD)
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-      # 下载上次构建时的 digest 和 commit hash
+      # 创建 digests 文件夹，下载上次构建时的 digest 和 commit hash
       - name: Download last build digest and commit hash
         id: download_info
         run: |
           mkdir -p digests
-          curl -fL -o digests/last_digest.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_digest.txt" || echo ""
-          curl -fL -o digests/last_commit.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_commit.txt" || echo ""
+          curl -fL -o digests/last_digest.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_digest.txt" || echo "No previous digest found."
+          curl -fL -o digests/last_commit.txt "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/artifacts/last_commit.txt" || echo "No previous commit found."
 
       # 检查镜像的 digest 和提交号是否有变化
       - name: Check if image or code has been updated
         id: check_update
         run: |
-          LAST_DIGEST=$(cat digests/last_digest.txt || echo "")
-          LAST_COMMIT=$(cat digests/last_commit.txt || echo "")
+          # 读取上次的 digest 和 commit hash
+          if [ -f digests/last_digest.txt ]; then
+            LAST_DIGEST=$(cat digests/last_digest.txt)
+          else
+            LAST_DIGEST=""
+          fi
 
+          if [ -f digests/last_commit.txt ]; then
+            LAST_COMMIT=$(cat digests/last_commit.txt)
+          else
+            LAST_COMMIT=""
+          fi
+
+          # 判断是否有更新
           if [ "$LAST_DIGEST" != "$LATEST_DIGEST" ] || [ "$LAST_COMMIT" != "$COMMIT_HASH" ]; then
             echo "New image or code detected."
           else
