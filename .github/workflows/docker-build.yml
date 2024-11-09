@@ -62,8 +62,8 @@ jobs:
         run: |
           docker build -t aliceboy111/code-server-python:latest .
           docker push aliceboy111/code-server-python:latest
-
-、      # 保存新的 digest 和 commit hash 为 Artifact
+      
+      # 保存新的 digest 和 commit hash 为 Artifact
       - name: Save new digest and commit hash as artifact
         if: steps.check_update.outcome == 'success'
         run: |
