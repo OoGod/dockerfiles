@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      BASE_IMAGE: codercom/code-server  # 基础镜像名称
-      BASE_TAG: latest                  # 基础镜像标签
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       DOCKER_IMAGE_NAME: "code-server"  # 镜像名称
@@ -27,45 +25,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 获取指定镜像的最新 digest
-      - name: Get latest base image digest
-        id: get_digest
-        run: |
-          LATEST_DIGEST=$(curl -s "https://registry.hub.docker.com/v2/repositories/${BASE_IMAGE}/tags/${BASE_TAG}" | jq -r '.images[0].digest')
-          echo "Latest base image digest: $LATEST_DIGEST"
-          echo "LATEST_DIGEST=$LATEST_DIGEST" >> $GITHUB_ENV
-
-      # 创建 digests 文件夹并下载上次构建时的 digest
-      - name: Download last build digest
-        run: |
-          mkdir -p digests
-          echo "Downloading the last build digest..."
-          curl -sL -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" \
-            "$GITHUB_API_URL/repos/${GITHUB_REPOSITORY}/actions/artifacts" | \
-            jq -r '.artifacts[] | select(.name=="code-server-digest") | .archive_download_url' | \
-            sort | tail -n 1 | \
-            xargs -I {} curl -L -o digests/last_digest.zip -H "Authorization: token ${{ secrets.MY_GITHUB_TOKEN }}" {}
-
-          # 检查并解压下载的 ZIP 文件
-          if [ -f digests/last_digest.zip ]; then
-            unzip -q digests/last_digest.zip -d digests || echo "No previous digest found."
-          fi
-
-      # 比较最新的 digest 与上一次的 digest
-      - name: Compare digests
-        run: |
-          if [ -f digests/last_digest.txt ]; then
-            LAST_DIGEST=$(cat digests/last_digest.txt)
-          else
-            LAST_DIGEST=""
-          fi
-
-          if [ "$LATEST_DIGEST" == "$LAST_DIGEST" ]; then
-            echo "No updates detected. Exiting."
-            exit 0
-          else
-            echo "New base image detected."
-          fi
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
       # 使用 docker/build-push-action 来构建并推送镜像
       - name: Log in to Docker Hub
@@ -81,15 +42,3 @@ jobs:
           push: true                 # 是否推送到 Docker Hub
           file: ${{ env.DOCKERFILE_PATH }}  # 指定自定义 Dockerfile 的路径
           tags: ${{ env.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}  # >使用环境变量作为镜像标签
-
-      # 将最新的 digest 保存为 artifact
-      - name: Save latest digest as artifact
-        run: |
-          echo "$LATEST_DIGEST" > digests/last_digest.txt
-          zip -r digests.zip digests/last_digest.txt
-
-      - name: Upload digest artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: code-server-digest
-          path: digests.zip
