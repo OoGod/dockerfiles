@@ -69,13 +69,17 @@ jobs:
         run: |
           echo "${{ steps.get_digest.outputs.LATEST_DIGEST }}" > digests/last_digest.txt
           echo "${{ steps.get_commit.outputs.COMMIT_HASH }}" > digests/last_commit.txt
-        - name: Upload digest and commit hash as artifact
-          uses: actions/upload-artifact@v2
-          with:
-            name: last_digest
-            path: digests/last_digest.txt
-        - name: Upload commit hash as artifact
-          uses: actions/upload-artifact@v2
-          with:
-            name: last_commit
-            path: digests/last_commit.txt
+
+      - name: Upload digest as artifact
+        if: steps.check_update.outcome == 'success'
+        uses: actions/upload-artifact@v2
+        with:
+          name: last_digest
+          path: digests/last_digest.txt
+
+      - name: Upload commit hash as artifact
+        if: steps.check_update.outcome == 'success'
+        uses: actions/upload-artifact@v2
+        with:
+          name: last_commit
+          path: digests/last_commit.txt
