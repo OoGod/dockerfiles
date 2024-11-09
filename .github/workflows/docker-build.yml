@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 检出代码仓库，以便使用 Git 命令
+      - name: Check out the repository
+        uses: actions/checkout@v3
+      
       # 获取最新的 code-server 镜像 digest
       - name: Get latest code-server image digest from Docker Hub
         id: get_digest
