@@ -1,21 +1,21 @@
-name: Build and Push jenkins Docker Image
+name: Build and Push jenkins agent Docker Image
 
 on:
   workflow_dispatch:  # 手动触发
   push:
     branches:
       - main  # 在 main 分支推送时触发
-    paths:
-      - jenkins.dockerfile # 仅当此文件发生变动时触发工作流
+        #paths:
+        #- alpine.dockerfile # 仅当此文件发生变动时触发工作流
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
-      DOCKER_IMAGE_NAME: "jenkins"  # 镜像名称
+      DOCKER_IMAGE_NAME: "inbound-agent"  # 镜像名称
       DOCKER_TAG: "latest"  # 镜像标签
-      DOCKERFILE_PATH: "./jenkins.dockerfile"  # 自定义 Dockerfile 路径
+      DOCKERFILE_PATH: "./inbound-agent.dockerfile"  # 自定义 Dockerfile 路径
 
 
     steps:
