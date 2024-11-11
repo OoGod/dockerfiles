@@ -9,8 +9,11 @@ RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
     apt-get clean
 
-# 安装 pytest
-RUN pip3 install pytest
+# 创建一个虚拟环境
+RUN python3 -m venv /opt/venv
+
+# 激活虚拟环境并安装 pytest
+RUN /opt/venv/bin/pip install --no-cache-dir pytest
 
 # 切换回 Jenkins 用户
 USER jenkins
