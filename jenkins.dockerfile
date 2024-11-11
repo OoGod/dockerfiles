@@ -4,9 +4,13 @@ FROM jenkins/jenkins:lts
 # 切换到 root 用户以安装软件
 USER root
 
+# 安装 Python 和 pip
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip
+    apt-get install -y python3 python3-pip && \
+    apt-get clean
 
+# 安装 pytest
+RUN pip3 install pytest
 
 # 切换回 Jenkins 用户
 USER jenkins
