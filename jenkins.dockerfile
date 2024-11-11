@@ -4,12 +4,9 @@ FROM jenkins/jenkins:lts
 # 切换到 root 用户以安装软件
 USER root
 
-# 更新包列表并安装 Docker 和 Docker Compose
 RUN apt-get update && \
-    apt-get install -y docker.io curl && \
-    curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
-    chmod +x /usr/local/bin/docker-compose && \
-    apt-get clean
+    apt-get install -y python3 python3-pip && \
+    pip3 install pytest && apt-get clean
 
 # 切换回 Jenkins 用户
 USER jenkins
