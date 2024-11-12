@@ -6,7 +6,7 @@ USER root
 
 # 安装 Python 和 pip
 RUN apt-get update && \
-    apt-get install -y maven python3 python3-pip python3-venv python3-dev build-essential && \
+    apt-get install -y maven python3 python3-pip python3-venv tree && \
     apt-get clean
 
 # 切换回 Jenkins 用户

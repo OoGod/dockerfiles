@@ -5,8 +5,8 @@ on:
   push:
     branches:
       - main  # 在 main 分支推送时触发
-        #paths:
-        #- alpine.dockerfile # 仅当此文件发生变动时触发工作流
+    paths:
+      - inbound-agent.dockerfile # 仅当此文件发生变动时触发工作流
 
 jobs:
   build:
