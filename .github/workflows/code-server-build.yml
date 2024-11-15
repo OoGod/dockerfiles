@@ -1,4 +1,4 @@
-name: Check and Build Docker Image
+name: Check and Build code server Docker Image
 
 on:
   workflow_dispatch:     # 手动触发
