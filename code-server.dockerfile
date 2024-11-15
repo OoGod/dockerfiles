@@ -10,9 +10,6 @@ RUN apt-get update && \
     iputils-ping curl wget net-tools traceroute telnet nmap iputils-tracepath mtr && \
     rm -rf /var/lib/apt/lists/*
 
-# 创建非 root 用户
-RUN useradd -m coder
-
 # 切换为非 root 用户
 USER coder
 
@@ -24,4 +21,3 @@ EXPOSE 8080
 
 # 启动code-server
 CMD ["code-server", "--bind-addr", "0.0.0.0:8080"]
-
