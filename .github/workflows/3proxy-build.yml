@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push 3proxy Docker Image
 
 on:
   workflow_dispatch:  # 手动触发
@@ -15,7 +15,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}  # 从 GitHub Secrets 中读取 Docker 用户名
       DOCKER_IMAGE_NAME: "3proxy"  # 镜像名称
       DOCKER_TAG: "latest"  # 镜像标签
-      DOCKERFILE_PATH: ".3proxy/Dockerfile"  # 自定义 Dockerfile 路径
+      DOCKERFILE_PATH: "./3proxy/Dockerfile"  # 自定义 Dockerfile 路径
 
 
     steps:
