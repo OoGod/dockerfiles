@@ -6,7 +6,8 @@ on:
     branches:
       - main  # 在 main 分支推送时触发
     paths:
-      - 3proxy # 仅当此文件发生变动时触发工作流
+      - 3proxy/Dockerfile # 仅当此文件发生变动时触发工作流
+      - 3proxy/3proxy.cfg # 仅当此文件发生变动时触发工作流
 
 jobs:
   build:
