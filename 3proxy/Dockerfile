@@ -18,7 +18,7 @@ RUN git clone https://github.com/z3APA3A/3proxy.git /3proxy && \
 RUN mkdir /etc/3proxy
 
 # 复制配置文件
-COPY 3proxy.cfg /etc/3proxy/3proxy.cfg
+COPY ./3proxy/3proxy.cfg /etc/3proxy/3proxy.cfg
 
 # 暴露代理端口
 EXPOSE 3128 1080
