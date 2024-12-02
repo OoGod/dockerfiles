@@ -6,6 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # 更新包列表并安装必要的工具
 RUN apt-get update && \
+    apt-get install -y curl jq git vim && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update
