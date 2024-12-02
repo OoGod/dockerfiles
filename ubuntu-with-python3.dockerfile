@@ -13,7 +13,7 @@ RUN apt-get update && \
 
 # 更新包列表并安装 Python 3 和 pip
 RUN apt-get update && \
-    apt-get install -y python3 python3-distutils python3-pip python3-tk && \
+    apt-get install -y python3 python3-distutils python3-pip python3-tk python3-venv&& \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
