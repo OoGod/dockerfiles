@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # 更新包列表并安装 Python 3.8 和 pip
 RUN apt-get update && \
-    apt-get install -y python3.8 python3.8-distutils python3-pip && \
+    apt-get install -y python3.8 python3.8-distutils python3-pip python3.8-tk && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
