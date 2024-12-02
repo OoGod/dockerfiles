@@ -4,6 +4,12 @@ FROM ubuntu:20.04
 # 设置环境变量以避免交互式提示
 ENV DEBIAN_FRONTEND=noninteractive
 
+# 更新包列表并安装必要的工具
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update
+
 # 更新包列表并安装 Python 3 和 pip
 RUN apt-get update && \
     apt-get install -y python3 python3-distutils python3-pip python3-tk && \
